@@ -1,5 +1,7 @@
+# email_sender/views.py
 from django.shortcuts import render
 from django.core.mail import send_mail
+from django.conf import settings
 import requests
 from bs4 import BeautifulSoup
 
@@ -8,15 +10,19 @@ def index(request):
 
 def send_email(request):
     if request.method == 'POST':
-        sender = request.POST['sender']
-        recipient = request.POST['recipient']
-        subject = request.POST['subject']
-        body = request.POST['body']
+        to_email = request.POST.get('to')
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
+        from_email = settings.EMAIL_HOST_USER
 
-        send_mail(subject, body, sender, [recipient])
-        return render(request, 'email_sent.html', {'recipient': recipient})
+        try:
+            send_mail(subject, message, from_email, [to_email])
+            return render(request, 'index.html', {'msg':'Successfully send'})
+        except Exception as e:
+            return render(request, 'index.html', {'msg': str(e)})
     else:
-        return render(request, 'send_email.html')
+        return render(request, 'index.html')
+
 
 def scrape_website(request):
     if request.method == 'POST':
@@ -25,7 +31,6 @@ def scrape_website(request):
         soup = BeautifulSoup(response.text, 'html.parser')
         content = soup.get_text()
 
-        return render(request, 'scraped_website.html', {'content': content})
+        return render(request, 'scrape_website.html', {'content': content})
     else:
         return render(request, 'scrape_website.html')
-
